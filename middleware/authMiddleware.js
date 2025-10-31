@@ -1,6 +1,5 @@
 // middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'your-super-secret-key'; // authControllerと同じ秘密鍵
 
 module.exports = (req, res, next) => {
   try {
@@ -13,7 +12,7 @@ module.exports = (req, res, next) => {
     const token = authHeader.split(' ')[1];
     
     // トークンを検証
-    const decodedToken = jwt.verify(token, JWT_SECRET);
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
     
     // 検証成功後、リクエストオブジェクトにユーザーIDを追加
     req.user = { id: decodedToken.id };

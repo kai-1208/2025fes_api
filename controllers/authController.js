@@ -3,8 +3,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
-const JWT_SECRET = 'your-super-secret-key';
-
 exports.login = async (req, res, next) => { // next を引数に追加
   try {
     const { id, pass } = req.body;
@@ -22,7 +20,7 @@ exports.login = async (req, res, next) => { // next を引数に追加
       throw error;
     }
 
-    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '3h' });
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '3h' });
     
     // 成功レスポンスを統一
     res.status(200).json({
