@@ -1,0 +1,7 @@
+# .dockerignore
+node_modules
+.env
+.git
+logs/
+Dockerfile
+.dockerignore
