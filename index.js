@@ -14,9 +14,15 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// corsの設定
+const corsOptions = {
+  origin: 'https://pinattutaro.github.io', 
+  optionsSuccessStatus: 200
+};
+
 // ミドルウェアの設定
 app.use(helmet());
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ルーティングの設定
