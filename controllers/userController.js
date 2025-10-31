@@ -27,38 +27,56 @@ exports.getMe = async (req, res, next) => {
 // クエストシステムからフラグを更新する処理
 exports.updateFlag = async (req, res, next) => {
   try {
-    const { userId, flagName, increment } = req.body;
+    const { userId, updates } = req.body; // 'updates' はフラグ名と加算値のペアの配列
 
-    // ★ 更新するフィールドを動的に構築するためのオブジェクト
+    if (!userId || !Array.isArray(updates) || updates.length === 0) {
+      const error = new Error('Invalid request. userId and updates array are required.');
+      error.statusCode = 400;
+      throw error;
+    }
+
     const updateOperation = {
       $inc: {}
     };
+    let isGamePlayed = false;
 
-    // 1. メインのフラグを更新対象に追加
-    updateOperation.$inc[`flags.${flagName}`] = increment;
+    // 1. リクエストされた全フラグを更新対象に追加
+    for (const update of updates) {
+      if (typeof update.flagName === 'string' && typeof update.increment === 'number') {
+        updateOperation.$inc[`flags.${update.flagName}`] = update.increment;
 
-    // ★ 2. 'common' ルールの実装
-    //    casinoのコインや負け回数以外のゲームプレイに関わるフラグが更新された場合、
-    //    'games_played'も1増やす
-    const gamePlayFlags = [
-      'casino_roulette_played', 'casino_poker_played', 'casino_blackjack_played',
-      'dungeon_enemies_defeated', 'dungeon_chests_opened', 'dungeon_player_deaths',
-      'dungeon_floors_cleared', 'code_problems_solved', 'code_failures', 'code_solo_clears'
-    ];
-    if (gamePlayFlags.includes(flagName)) {
+        // 2. 'common' ルールの判定
+        const gamePlayFlags = [
+          'casino_roulette_played', 'casino_poker_played', 'casino_blackjack_played',
+          'dungeon_enemies_defeated', 'dungeon_chests_opened', 'dungeon_player_deaths',
+          'dungeon_floors_cleared', 'code_problems_solved', 'code_failures', 'code_solo_clears'
+        ];
+        if (gamePlayFlags.includes(update.flagName) && update.increment > 0) {
+          isGamePlayed = true;
+        }
+      }
+    }
+
+    // 3. 'common' ルールを適用 (いずれかのゲームがプレイされていたらgames_playedを1増やす)
+    if (isGamePlayed) {
       updateOperation.$inc['flags.games_played'] = 1;
     }
 
-    // ★ 3. 'casino' ルールの実装
+    // 更新オペレーションに何もない場合はエラー
+    if (Object.keys(updateOperation.$inc).length === 0) {
+      const error = new Error('Invalid updates format.');
+      error.statusCode = 400;
+      throw error;
+    }
 
     const updatedUser = await User.findOneAndUpdate(
       { id: userId },
-      updateOperation, // ★ 構築した更新オペレーションを適用
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      updateOperation,
+      { new: true }
     );
 
     if (!updatedUser) {
-      const error = new Error('User to update not found.');
+      const error = new Error('User not found.');
       error.statusCode = 404;
       throw error;
     }
@@ -66,7 +84,7 @@ exports.updateFlag = async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       data: { 
-        message: 'Flag updated successfully.',
+        message: 'Flags updated successfully.',
         updatedFlags: updatedUser.flags 
       }
     });
