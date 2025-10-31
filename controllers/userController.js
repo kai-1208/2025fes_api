@@ -28,22 +28,41 @@ exports.getMe = async (req, res, next) => {
 exports.updateFlag = async (req, res, next) => {
   try {
     const { userId, flagName, increment } = req.body;
-    
-    // $inc オペレーターを使って指定したフィールドの値をアトミックに増減させる
+
+    // ★ 更新するフィールドを動的に構築するためのオブジェクト
+    const updateOperation = {
+      $inc: {}
+    };
+
+    // 1. メインのフラグを更新対象に追加
+    updateOperation.$inc[`flags.${flagName}`] = increment;
+
+    // ★ 2. 'common' ルールの実装
+    //    casinoのコインや負け回数以外のゲームプレイに関わるフラグが更新された場合、
+    //    'games_played'も1増やす
+    const gamePlayFlags = [
+      'casino_roulette_played', 'casino_poker_played', 'casino_blackjack_played',
+      'dungeon_enemies_defeated', 'dungeon_chests_opened', 'dungeon_player_deaths',
+      'dungeon_floors_cleared', 'code_problems_solved', 'code_failures', 'code_solo_clears'
+    ];
+    if (gamePlayFlags.includes(flagName)) {
+      updateOperation.$inc['flags.games_played'] = 1;
+    }
+
+    // ★ 3. 'casino' ルールの実装
+
     const updatedUser = await User.findOneAndUpdate(
       { id: userId },
-      { $inc: { [`flags.${flagName}`]: increment } },
+      updateOperation, // ★ 構築した更新オペレーションを適用
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
     if (!updatedUser) {
-      // upsert:true のため、基本的にはこのエラーは発生しないが念のため
       const error = new Error('User to update not found.');
       error.statusCode = 404;
       throw error;
     }
     
-    // 成功レスポンスを統一
     res.status(200).json({
       status: 'success',
       data: { 
@@ -52,7 +71,6 @@ exports.updateFlag = async (req, res, next) => {
       }
     });
   } catch (error) {
-    // エラーを中央エラーハンドラに渡す
     next(error);
   }
 };

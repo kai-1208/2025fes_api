@@ -2,6 +2,27 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
+// 新規ユーザーに設定する初期フラグの定義
+const initialFlags = {
+  // Common
+  games_played: 0,
+  // Casino
+  casino_roulette_played: 0,
+  casino_poker_played: 0,
+  casino_blackjack_played: 0,
+  casino_coins_earned: 0,
+  casino_losses: 0,
+  // Dungeon
+  dungeon_enemies_defeated: 0,
+  dungeon_chests_opened: 0,
+  dungeon_player_deaths: 0,
+  dungeon_floors_cleared: 0,
+  // Code Editor
+  code_problems_solved: 0,
+  code_failures: 0,
+  code_solo_clears: 0
+};
+
 // ランダムな英数字の文字列を生成するヘルパー関数
 const generateRandomString = (length) => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -37,7 +58,7 @@ exports.createUsers = async (req, res, next) => {
         name: `冒険者-${i + 1}`,
         currency: 100,
         experience: 0,
-        flags: {}
+        flags: { ...initialFlags }
       });
       
       plainTextCredentials.push({ id: userId, pass: plainPass });

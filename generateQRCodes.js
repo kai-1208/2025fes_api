@@ -14,7 +14,7 @@ const users = [
   { "id": "kL5mN6", "pass": "oP7qR8sT" },
   { "id": "uV9wX0", "pass": "yZ1aB2cD" },
   { "id": "eF3gH4", "pass": "iJ5kL6mN" },
-  { "id": "oP7qR8", "pass": "sT9uV0wX" }
+  { "id": "WMr7ZQ", "pass": "hPYIpeWl" }
 ];
 
 const webAppUrl = 'https://omuct-fest2025.io/index.html';
