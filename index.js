@@ -15,8 +15,21 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // corsの設定
+const allowedOrigins = [
+  'https://pinattutaro.github.io',
+  'https://kai-1208.github.io'
+];
+
 const corsOptions = {
-  origin: 'https://pinattutaro.github.io', 
+  origin: function (origin, callback) {
+    // originがない場合（curlなどからの直接アクセス）も許可
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   optionsSuccessStatus: 200
 };
 
