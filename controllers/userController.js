@@ -92,3 +92,47 @@ exports.updateFlag = async (req, res, next) => {
     next(error);
   }
 };
+
+// ユーザーが自身の名前を更新するための新しい関数
+exports.updateMyName = async (req, res, next) => {
+  try {
+    // リクエストボディから新しい名前を取得
+    const { name: newName } = req.body;
+
+    // 入力値の検証
+    if (!newName || newName.trim().length === 0) {
+      const error = new Error('Name cannot be empty.');
+      error.statusCode = 400; // Bad Request
+      throw error;
+    }
+    if (newName.length > 20) {
+      const error = new Error('Name cannot be longer than 20 characters.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // authMiddlewareが設定したユーザーIDを使って、DBを更新
+    const updatedUser = await User.findOneAndUpdate(
+      { id: req.user.id },    // どのユーザーを？ -> ログイン中のユーザー
+      { name: newName },      // 何を更新？ -> nameフィールドを新しい値に
+      { new: true }           // new:true で更新後のユーザー情報を返す
+    );
+
+    if (!updatedUser) {
+      const error = new Error('User not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // 統一された成功レスポンスを返す
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: updatedUser
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
