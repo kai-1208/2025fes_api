@@ -1,5 +1,6 @@
 // controllers/userController.js
 const User = require('../models/User');
+const Quest = require('../models/Quest'); 
 
 // ログイン中のユーザー情報を取得する処理
 exports.getMe = async (req, res, next) => {
@@ -24,6 +25,40 @@ exports.getMe = async (req, res, next) => {
   }
 };
 
+/**
+ * クエスト達成をチェックし、達成していればレベルアップと報酬付与を行う関数
+ * @param {Document} user - チェック対象のユーザーオブジェクト
+ * @returns {Promise<boolean>} レベルアップが発生したかどうか
+ */
+async function checkAndProcessQuestCompletion(user) {
+  let levelUpOccurred = false;
+  
+  // ユーザーが挑戦中の各カテゴリのクエストをチェック
+  for (const category of Object.keys(user.questLevels)) {
+    const currentLevel = user.questLevels[category];
+    if (currentLevel > 5) continue; // 既に全クリ
+
+    // 現在のレベルのクエスト定義をDBから取得
+    const quest = await Quest.findOne({ category: category, level: currentLevel });
+    if (!quest) continue; // クエスト定義がない場合はスキップ
+
+    // ユーザーのフラグが目標値に達しているかチェック
+    const userFlagValue = user.flags[quest.targetFlag] || 0;
+    if (userFlagValue >= quest.targetValue) {
+      user.questLevels[category] += 1; // レベルアップ
+      user.currency += quest.rewardCurrency; // 報酬を加算
+      user.experience += quest.rewardExperience;
+      levelUpOccurred = true;
+      console.log(`User ${user.id} cleared ${category} Lv.${currentLevel}!`);
+    }
+  }
+
+  if (levelUpOccurred) {
+    await user.save(); // 変更をDBに保存
+  }
+  return levelUpOccurred;
+}
+
 // クエストシステムからフラグを更新する処理
 exports.updateFlag = async (req, res, next) => {
   try {
@@ -35,10 +70,9 @@ exports.updateFlag = async (req, res, next) => {
       throw error;
     }
 
-    const updateOperation = {
-      $inc: {}
-    };
+    const updateOperation = { $inc: {} };
     let isGamePlayed = false;
+    const gamePlayFlags = ['casino_played', 'dungeon_played', 'code_editor_played'];
 
     // 1. リクエストされた全フラグを更新対象に追加
     for (const update of updates) {
@@ -46,11 +80,6 @@ exports.updateFlag = async (req, res, next) => {
         updateOperation.$inc[`flags.${update.flagName}`] = update.increment;
 
         // 2. 'common' ルールの判定
-        const gamePlayFlags = [
-          'casino_roulette_played', 'casino_poker_played', 'casino_blackjack_played',
-          'dungeon_enemies_defeated', 'dungeon_chests_opened', 'dungeon_player_deaths',
-          'dungeon_floors_cleared', 'code_problems_solved', 'code_failures', 'code_solo_clears'
-        ];
         if (gamePlayFlags.includes(update.flagName) && update.increment > 0) {
           isGamePlayed = true;
         }
@@ -69,23 +98,24 @@ exports.updateFlag = async (req, res, next) => {
       throw error;
     }
 
-    const updatedUser = await User.findOneAndUpdate(
-      { id: userId },
-      updateOperation,
-      { new: true }
-    );
-
+    const updatedUser = await User.findOneAndUpdate({ id: userId }, updateOperation, { new: true });
     if (!updatedUser) {
       const error = new Error('User not found.');
       error.statusCode = 404;
       throw error;
     }
+
+    // 更新後のユーザーデータでクエスト達成をチェック
+    await checkAndProcessQuestCompletion(updatedUser);
+
+    // ユーザー情報を再取得して最新の状態を返す
+    const finalUser = await User.findOne({ id: userId });
     
     res.status(200).json({
       status: 'success',
       data: { 
         message: 'Flags updated successfully.',
-        updatedFlags: updatedUser.flags 
+        updatedFlags: finalUser
       }
     });
   } catch (error) {

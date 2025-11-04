@@ -7,17 +7,20 @@ const initialFlags = {
   // Common
   games_played: 0,
   // Casino
+  casino_played: 0,
   casino_roulette_played: 0,
   casino_poker_played: 0,
   casino_blackjack_played: 0,
   casino_coins_earned: 0,
   casino_losses: 0,
   // Dungeon
+  dungeon_played: 0,
   dungeon_enemies_defeated: 0,
   dungeon_chests_opened: 0,
   dungeon_player_deaths: 0,
   dungeon_floors_cleared: 0,
   // Code Editor
+  code_editor_played: 0,
   code_problems_solved: 0,
   code_failures: 0,
   code_solo_clears: 0

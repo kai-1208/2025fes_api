@@ -7,7 +7,12 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   currency: { type: Number, default: 0 },
   experience: { type: Number, default: 0 },
-  flags: { type: Object, default: {} }
+  flags: { type: Object, default: {} },
+  questLevels: {
+    casino: { type: Number, default: 1 },
+    dungeon: { type: Number, default: 1 },
+    code_editor: { type: Number, default: 1 }
+  }
 });
 
 module.exports = mongoose.model('User', userSchema);
