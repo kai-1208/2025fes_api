@@ -128,14 +128,11 @@ exports.updateFlag = async (req, res, next) => {
     // 2. クエスト達成をチェック
     await checkAndProcessQuestCompletion(updatedUser);
 
-    // ユーザー情報を再取得して最新の状態を返す
-    const finalUser = await User.findOne({ id: userId });
-
     res.status(200).json({
       status: 'success',
       data: { 
         message: 'Flags updated successfully.',
-        updatedUser: finalUser
+        updatedUser: updatedUser.flags
       }
     });
   } catch (error) {
