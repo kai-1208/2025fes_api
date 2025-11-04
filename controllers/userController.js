@@ -6,18 +6,38 @@ const Quest = require('../models/Quest');
 exports.getMe = async (req, res, next) => {
   try {
     // authMiddlewareによってreq.user.idがセットされている
-    const user = await User.findOne({ id: req.user.id });
-
+    const user = await User.findOne({ id: req.user.id }).lean();
     if (!user) {
       const error = new Error('User not found.');
       error.statusCode = 404;
       throw error;
     }
 
-    // 成功レスポンスを統一
+    // ユーザーの現在のクエストレベルからクエストの定義を検索
+    const questQueries = Object.keys(user.questLevels)
+      .filter(category => user.questLevels[category] <= 5)
+      .map(category => ({
+        category: category,
+        level: user.questLevels[category]
+      }));
+    
+    let activeQuestsArray = [];
+    if (questQueries.length > 0) {
+      activeQuestsArray = await Quest.find({ $or: questQueries }).lean();
+    }
+    
+    const activeQuests = activeQuestsArray.reduce((acc, quest) => {
+      acc[quest.category] = quest;
+      return acc;
+    }, {});
+
+    // ユーザー情報とクエスト情報を一緒に返す
     res.status(200).json({
       status: 'success',
-      data: { user }
+      data: {
+        user: user,
+        activeQuests: activeQuests 
+      }
     });
   } catch (error) {
     // エラーを中央エラーハンドラに渡す
@@ -62,60 +82,60 @@ async function checkAndProcessQuestCompletion(user) {
 // クエストシステムからフラグを更新する処理
 exports.updateFlag = async (req, res, next) => {
   try {
-    const { userId, updates } = req.body; // 'updates' はフラグ名と加算値のペアの配列
-
+    const { userId, updates } = req.body;
     if (!userId || !Array.isArray(updates) || updates.length === 0) {
       const error = new Error('Invalid request. userId and updates array are required.');
-      error.statusCode = 400;
-      throw error;
+      error.statusCode = 400; throw error;
     }
 
     const updateOperation = { $inc: {} };
-    let isGamePlayed = false;
-    const gamePlayFlags = ['casino_played', 'dungeon_played', 'code_editor_played'];
+    let shouldIncrementGamesPlayed = false; // ★ games_playedを増やすかどうかのフラグ
 
-    // 1. リクエストされた全フラグを更新対象に追加
+    // ★ games_playedをトリガーするフラグのリストを定義
+    const playedFlags = ['casino_played', 'dungeon_played', 'code_editor_played'];
+
     for (const update of updates) {
       if (typeof update.flagName === 'string' && typeof update.increment === 'number') {
+        // 全てのリクエストされたフラグを更新対象に追加
         updateOperation.$inc[`flags.${update.flagName}`] = update.increment;
 
-        // 2. 'common' ルールの判定
-        if (gamePlayFlags.includes(update.flagName) && update.increment > 0) {
-          isGamePlayed = true;
+        // ★ 新しい'common'ルールの判定
+        //    更新対象に*_playedフラグが含まれていたら、フラグを立てる
+        if (playedFlags.includes(update.flagName) && update.increment > 0) {
+          shouldIncrementGamesPlayed = true;
         }
       }
     }
 
-    // 3. 'common' ルールを適用 (いずれかのゲームがプレイされていたらgames_playedを1増やす)
-    if (isGamePlayed) {
+    // ★ 'common'ルールを適用
+    //    *_playedフラグが更新されていた場合、games_playedを1だけ増やす
+    if (shouldIncrementGamesPlayed) {
       updateOperation.$inc['flags.games_played'] = 1;
     }
 
-    // 更新オペレーションに何もない場合はエラー
     if (Object.keys(updateOperation.$inc).length === 0) {
       const error = new Error('Invalid updates format.');
-      error.statusCode = 400;
-      throw error;
+      error.statusCode = 400; throw error;
     }
 
-    const updatedUser = await User.findOneAndUpdate({ id: userId }, updateOperation, { new: true });
+    // 1. フラグを更新
+    let updatedUser = await User.findOneAndUpdate({ id: userId }, updateOperation, { new: true });
     if (!updatedUser) {
       const error = new Error('User not found.');
-      error.statusCode = 404;
-      throw error;
+      error.statusCode = 404; throw error;
     }
 
-    // 更新後のユーザーデータでクエスト達成をチェック
+    // 2. クエスト達成をチェック
     await checkAndProcessQuestCompletion(updatedUser);
 
     // ユーザー情報を再取得して最新の状態を返す
     const finalUser = await User.findOne({ id: userId });
-    
+
     res.status(200).json({
       status: 'success',
       data: { 
         message: 'Flags updated successfully.',
-        updatedFlags: finalUser
+        updatedUser: finalUser
       }
     });
   } catch (error) {
