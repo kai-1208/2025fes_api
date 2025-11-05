@@ -1,82 +1,65 @@
 // controllers/userController.js
 const User = require('../models/User');
-const Quest = require('../models/Quest'); 
+const Quest = require('../models/Quest');
+const { generateNewQuest } = require('../utils/questGenerator');
 
 // ログイン中のユーザー情報を取得する処理
 exports.getMe = async (req, res, next) => {
   try {
-    // authMiddlewareによってreq.user.idがセットされている
-    const user = await User.findOne({ id: req.user.id }).lean();
+    const user = await User.findOne({ id: req.user.id });
     if (!user) {
       const error = new Error('User not found.');
-      error.statusCode = 404;
-      throw error;
+      error.statusCode = 404; throw error;
     }
 
-    // ユーザーの現在のクエストレベルからクエストの定義を検索
-    const questQueries = Object.keys(user.questLevels)
-      .filter(category => user.questLevels[category] <= 5)
-      .map(category => ({
-        category: category,
-        level: user.questLevels[category]
-      }));
-    
-    let activeQuestsArray = [];
-    if (questQueries.length > 0) {
-      activeQuestsArray = await Quest.find({ $or: questQueries }).lean();
+    // ユーザーにアクティブなクエストがない場合、ここで生成してあげる
+    let needsSave = false;
+    for (const category of ['casino', 'dungeon', 'code_editor']) {
+      if (!user.activeQuests[category]) {
+        user.activeQuests[category] = generateNewQuest(category, user.flags);
+        needsSave = true;
+      }
     }
-    
-    const activeQuests = activeQuestsArray.reduce((acc, quest) => {
-      acc[quest.category] = quest;
-      return acc;
-    }, {});
+    if (needsSave) {
+      await user.save();
+    }
 
-    // ユーザー情報とクエスト情報を一緒に返す
     res.status(200).json({
       status: 'success',
-      data: {
-        user: user,
-        activeQuests: activeQuests 
-      }
+      data: { user } // activeQuestsもuserオブジェクトに含まれて返される
     });
   } catch (error) {
-    // エラーを中央エラーハンドラに渡す
     next(error);
   }
 };
 
 /**
- * クエスト達成をチェックし、達成していればレベルアップと報酬付与を行う関数
+ * クエスト達成をチェックし、達成していれば報酬を与え、新しいクエストを生成する
  * @param {Document} user - チェック対象のユーザーオブジェクト
- * @returns {Promise<boolean>} レベルアップが発生したかどうか
  */
 async function checkAndProcessQuestCompletion(user) {
-  let levelUpOccurred = false;
-  
-  // ユーザーが挑戦中の各カテゴリのクエストをチェック
-  for (const category of Object.keys(user.questLevels)) {
-    const currentLevel = user.questLevels[category];
-    if (currentLevel > 5) continue; // 既に全クリ
+  let questCompleted = false;
 
-    // 現在のレベルのクエスト定義をDBから取得
-    const quest = await Quest.findOne({ category: category, level: currentLevel });
-    if (!quest) continue; // クエスト定義がない場合はスキップ
+  for (const category of ['casino', 'dungeon', 'code_editor']) {
+    const activeQuest = user.activeQuests[category];
 
-    // ユーザーのフラグが目標値に達しているかチェック
-    const userFlagValue = user.flags[quest.targetFlag] || 0;
-    if (userFlagValue >= quest.targetValue) {
-      user.questLevels[category] += 1; // レベルアップ
-      user.currency += quest.rewardCurrency; // 報酬を加算
-      user.experience += quest.rewardExperience;
-      levelUpOccurred = true;
-      console.log(`User ${user.id} cleared ${category} Lv.${currentLevel}!`);
+    // アクティブなクエストがあり、目標フラグの値が目標値に達していたら
+    if (activeQuest && (user.flags[activeQuest.targetFlag] || 0) >= activeQuest.targetValue) {
+      console.log(`User ${user.id} completed quest: ${activeQuest.description}`);
+      
+      // 報酬を付与
+      user.currency += activeQuest.rewardCurrency;
+      user.experience += activeQuest.rewardExperience;
+      
+      // 新しいクエストを生成してセット
+      user.activeQuests[category] = generateNewQuest(category, user.flags);
+      questCompleted = true;
     }
   }
 
-  if (levelUpOccurred) {
-    await user.save(); // 変更をDBに保存
+  if (questCompleted) {
+    await user.save();
   }
-  return levelUpOccurred;
 }
 
 // クエストシステムからフラグを更新する処理
@@ -85,7 +68,8 @@ exports.updateFlag = async (req, res, next) => {
     const { userId, updates } = req.body;
     if (!userId || !Array.isArray(updates) || updates.length === 0) {
       const error = new Error('Invalid request. userId and updates array are required.');
-      error.statusCode = 400; throw error;
+      error.statusCode = 400;
+      throw error;
     }
 
     const updateOperation = { $inc: {} };
@@ -115,14 +99,16 @@ exports.updateFlag = async (req, res, next) => {
 
     if (Object.keys(updateOperation.$inc).length === 0) {
       const error = new Error('Invalid updates format.');
-      error.statusCode = 400; throw error;
+      error.statusCode = 400;
+      throw error;
     }
 
     // 1. フラグを更新
     let updatedUser = await User.findOneAndUpdate({ id: userId }, updateOperation, { new: true });
     if (!updatedUser) {
       const error = new Error('User not found.');
-      error.statusCode = 404; throw error;
+      error.statusCode = 404;
+      throw error;
     }
 
     // 2. クエスト達成をチェック
@@ -130,10 +116,7 @@ exports.updateFlag = async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      data: { 
-        message: 'Flags updated successfully.',
-        updatedUser: updatedUser.flags
-      }
+      data: { updatedUser }
     });
   } catch (error) {
     next(error);

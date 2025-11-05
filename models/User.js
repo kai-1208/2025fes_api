@@ -1,6 +1,18 @@
 // models/User.js
 const mongoose = require('mongoose');
 
+// クエストの状態を保存
+const activeQuestSchema = new mongoose.Schema({
+  questId: { type: String, required: true }, // 'dungeon_enemies_defeated'など
+  description: { type: String, required: true }, // 「敵を5体倒す」などの生成されたテキスト
+  targetFlag: { type: String, required: true },
+  targetValue: { type: Number, required: true },
+  startValue: { type: Number, required: true }, // クエスト開始時のフラグの値
+  rewardCurrency: { type: Number, required: true },
+  rewardExperience: { type: Number, required: true },
+  difficulty: { type: Number, required: true },
+}, { _id: false });
+
 const userSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   pass: { type: String, required: true },
@@ -9,10 +21,10 @@ const userSchema = new mongoose.Schema({
   experience: { type: Number, default: 0 },
   // status: { type: Number, default: 0 }, // 0: deactive, 1: active
   flags: { type: Object, default: {} },
-  questLevels: {
-    casino: { type: Number, default: 1 },
-    dungeon: { type: Number, default: 1 },
-    code_editor: { type: Number, default: 1 }
+  activeQuests: {
+    casino: { type: activeQuestSchema, default: null },
+    dungeon: { type: activeQuestSchema, default: null },
+    code_editor: { type: activeQuestSchema, default: null },
   }
 });
 
