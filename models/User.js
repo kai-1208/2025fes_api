@@ -15,7 +15,7 @@ const activeQuestSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
-  pass: { type: String, required: true },
+  id2: { type: String, required: true }, // お名前を pass -> id2 に変更
   name: { type: String, required: true },
   currency: { type: Number, default: 0 },
   experience: { type: Number, default: 0 },

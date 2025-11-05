@@ -51,20 +51,20 @@ exports.createUsers = async (req, res, next) => {
 
     for (let i = 0; i < count; i++) {
       const plainPass = generateRandomString(8);
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(plainPass, salt);
+      // const salt = await bcrypt.genSalt(10);
+      // const hashedPassword = await bcrypt.hash(plainPass, salt); // ハッシュ化は今回行わない
       const userId = generateRandomString(6);
 
       newUsers.push({
         id: userId,
-        pass: hashedPassword,
+        id2: plainPass,
         name: `冒険者-${i + 1}`,
         currency: 100,
         experience: 0,
         flags: { ...initialFlags }
       });
       
-      plainTextCredentials.push({ id: userId, pass: plainPass });
+      plainTextCredentials.push({ id: userId, id2: plainPass });
     }
 
     // insertManyは重複IDがあると全件失敗する可能性があるため、エラーハンドリングが重要

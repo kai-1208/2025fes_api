@@ -14,14 +14,15 @@ const users = [
   { "id": "kL5mN6", "pass": "oP7qR8sT" },
   { "id": "uV9wX0", "pass": "yZ1aB2cD" },
   { "id": "eF3gH4", "pass": "iJ5kL6mN" },
-  { "id": "WMr7ZQ", "pass": "hPYIpeWl" }
+  { "id": "WMr7ZQ", "pass": "hPYIpeWl" },
+  { "id": "ONOBNM", "pass": "sDZCV6zG" }
 ];
 
 const webAppUrl = 'https://omuct-fest2025.io/index.html';
 
 // 各ユーザーに対してQRコードを生成
 users.forEach(user => {
-  const fullUrl = `${webAppUrl}?id=${user.id}&pass=${user.pass}`;
+  const fullUrl = `${webAppUrl}?id=${user.id}&id2=${user.pass}`;
   const outputPath = `${outputDir}/user-${user.id}.png`;
 
   QRCode.toFile(outputPath, fullUrl, (err) => {
