@@ -40,8 +40,8 @@ exports.createUsers = async (req, res, next) => {
   try {
     const { count } = req.body;
 
-    if (!count || !Number.isInteger(count) || count <= 0 || count > 500) {
-      const error = new Error('Invalid count. Must be an integer between 1 and 500.');
+    if (!count || !Number.isInteger(count) || count <= 0 || count > 1000) {
+      const error = new Error('Invalid count. Must be an integer between 1 and 1000.');
       error.statusCode = 400;
       throw error;
     }
