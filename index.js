@@ -17,7 +17,8 @@ const PORT = process.env.PORT || 3000;
 // corsの設定
 const allowedOrigins = [
   'https://pinattutaro.github.io',
-  'https://kai-1208.github.io'
+  'https://kai-1208.github.io',
+  'http://127.0.0.1:5500'
 ];
 
 const corsOptions = {

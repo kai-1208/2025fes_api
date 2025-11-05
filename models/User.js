@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   currency: { type: Number, default: 0 },
   experience: { type: Number, default: 0 },
+  // status: { type: Number, default: 0 }, // 0: deactive, 1: active
   flags: { type: Object, default: {} },
   questLevels: {
     casino: { type: Number, default: 1 },
