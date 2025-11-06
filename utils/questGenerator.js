@@ -10,7 +10,6 @@ const QUEST_DEFINITIONS = {
   ],
   dungeon: [
     { id: 'dungeon_enemies_defeated', text: '敵をN体倒す', baseUnit: 1, difficulty: 3, targetFlag: 'dungeon_enemies_defeated' },
-    { id: 'dungeon_chests_opened', text: '宝箱をN個見つける', baseUnit: 1, difficulty: 2, targetFlag: 'dungeon_chests_opened' },
     { id: 'dungeon_floors_cleared', text: '階層をN回突破する', baseUnit: 1, difficulty: 3, targetFlag: 'dungeon_floors_cleared' },
   ],
   code_editor: [

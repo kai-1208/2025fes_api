@@ -12,18 +12,14 @@ const initialFlags = {
   casino_poker_played: 0,
   casino_blackjack_played: 0,
   casino_coins_earned: 0,
-  casino_losses: 0,
   // Dungeon
   dungeon_played: 0,
   dungeon_enemies_defeated: 0,
-  dungeon_chests_opened: 0,
-  dungeon_player_deaths: 0,
   dungeon_floors_cleared: 0,
   // Code Editor
   code_editor_played: 0,
   code_problems_solved: 0,
-  code_failures: 0,
-  code_solo_clears: 0
+  code_solo_clears: 0,
 };
 
 // ランダムな英数字の文字列を生成するヘルパー関数

@@ -18,7 +18,7 @@ const users = [
   { "id": "ONOBNM", "pass": "sDZCV6zG" }
 ];
 
-const webAppUrl = 'https://omuct-fest2025.io/index.html';
+const webAppUrl = 'https://pinattutaro.github.io/festSystem2025';
 
 // 各ユーザーに対してQRコードを生成
 users.forEach(user => {
