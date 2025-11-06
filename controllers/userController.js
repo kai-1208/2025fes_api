@@ -88,6 +88,11 @@ exports.updateFlag = async (req, res, next) => {
         if (playedFlags.includes(update.flagName) && update.increment > 0) {
           shouldIncrementGamesPlayed = true;
         }
+
+        // カジノで稼いだ分のお金をcurrencyにも反映させる
+        if (update.flagName === 'casino_coins_earned') {
+          updateOperation.$inc['currency'] = update.increment;
+        }
       }
     }
 
@@ -114,9 +119,15 @@ exports.updateFlag = async (req, res, next) => {
     // 2. クエスト達成をチェック
     await checkAndProcessQuestCompletion(updatedUser);
 
+    const finalUser = await User.findOne({ id: userId });
+
+
     res.status(200).json({
       status: 'success',
-      data: { updatedUser }
+      data: { 
+        message: 'Flags Updated Successfully',
+        updatedUser: finalUser
+      } // updatedUser
     });
   } catch (error) {
     next(error);
