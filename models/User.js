@@ -25,7 +25,6 @@ const userSchema = new mongoose.Schema({
     dungeon: { type: activeQuestSchema, default: null },
     code_editor: { type: activeQuestSchema, default: null },
   },
-  isActivated: {type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('User', userSchema);
