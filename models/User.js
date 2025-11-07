@@ -19,13 +19,13 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   currency: { type: Number, default: 0 },
   experience: { type: Number, default: 0 },
-  // status: { type: Number, default: 0 }, // 0: deactive, 1: active
   flags: { type: Object, default: {} },
   activeQuests: {
     casino: { type: activeQuestSchema, default: null },
     dungeon: { type: activeQuestSchema, default: null },
     code_editor: { type: activeQuestSchema, default: null },
-  }
+  },
+  isActivated: {type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('User', userSchema);

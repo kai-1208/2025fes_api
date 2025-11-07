@@ -46,8 +46,8 @@ exports.generateNewQuest = (category, currentUserFlags) => {
   const targetValue = startValue + targetN; // 目標は「現在の値 + N」
 
   // 報酬を計算、とりあえず難易度にかけておく
-  const rewardCurrency = 10 * finalDifficulty;
-  const rewardExperience = 20 * finalDifficulty;
+  const rewardCurrency = 50 * finalDifficulty;
+  const rewardExperience = 100 * finalDifficulty;
 
   // 返却するクエストオブジェクトを組み立てる
   return {
