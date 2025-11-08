@@ -13,7 +13,10 @@ exports.login = async (req, res, next) => { // next を引数に追加
       throw error;
     }
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '3h' });
+    user.isActivated = true;
+    await user.save();
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
     
     // 成功レスポンスを統一
     res.status(200).json({

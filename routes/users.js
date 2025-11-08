@@ -4,6 +4,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/authMiddleware');
 const questApiAuth = require('../middleware/questApiAuth');
+const apiKeyAuth = require('../middleware/apiKeyAuth');
 
 // GET /api/users/me はJWT認証
 router.get('/me', authMiddleware, userController.getMe);

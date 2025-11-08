@@ -177,3 +177,24 @@ exports.updateMyName = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getUserStatus = async (req, res, next) => {
+  try {
+    const user = await User.findOne({ id: req.params.id });
+
+    if (!user) {
+      // ユーザーが見つからない場合は、まだ有効化されていないのと同じ
+      return res.status(200).json({ status: 'success', data: { isActivated: false } });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        isActivated: user.isActivated
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};

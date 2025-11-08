@@ -6,7 +6,7 @@ const QRCode = require('qrcode');
 
 const API_BASE_URL = 'https://semirarely-expositional-aria.ngrok-free.dev';
 const ADMIN_API_KEY = '2025fes-api-key';
-const USER_COUNT = 10; // 作成したいユーザーの数
+const USER_COUNT = 100; // 作成したいユーザーの数
 const WEB_APP_URL = 'https://pinattutaro.github.io/festSystem2025';
 
 // --- 出力設定 ---
